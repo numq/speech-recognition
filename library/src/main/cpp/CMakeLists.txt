@@ -3,7 +3,7 @@ project(stt VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_library(stt SHARED src/Java_com_github_numq_stt_NativeSTT.cpp)
+add_library(stt SHARED src/Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText.cpp)
 
 find_package(JNI)
 
@@ -15,7 +15,7 @@ else ()
     message(FATAL_ERROR "JNI not found.")
 endif ()
 
-target_include_directories(stt PRIVATE include)
+target_include_directories(stt PRIVATE include include/ggml)
 
 target_link_directories(stt PRIVATE bin)
 

@@ -1,8 +1,9 @@
-package com.github.numq.stt
+package com.github.numq.stt.whisper
 
+import com.github.numq.stt.exception.NativeException
 import java.lang.ref.Cleaner
 
-internal class NativeSTT(modelPath: String) : AutoCloseable {
+internal class NativeWhisperSpeechToText(modelPath: String) : AutoCloseable {
     private val nativeHandle = initNative(modelPath = modelPath).also { handle ->
         require(handle != -1L) { "Unable to initialize native library" }
     }
@@ -22,7 +23,13 @@ internal class NativeSTT(modelPath: String) : AutoCloseable {
         external fun freeNative(handle: Long)
     }
 
-    fun recognize(pcmBytes: ByteArray) = recognizeNative(handle = nativeHandle, pcmBytes = pcmBytes)
+    fun recognize(pcmBytes: ByteArray): String {
+        try {
+            return recognizeNative(handle = nativeHandle, pcmBytes = pcmBytes)
+        } catch (e: Exception) {
+            throw NativeException(e)
+        }
+    }
 
     override fun close() = cleanable.clean()
 }

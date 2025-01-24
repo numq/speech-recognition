@@ -1,3 +1,3 @@
-rootProject.name = "stt"
+rootProject.name = "speech-to-text"
 
 include("library", "example")

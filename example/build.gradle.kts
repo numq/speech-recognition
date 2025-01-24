@@ -18,7 +18,8 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation(project(":library"))
-    implementation(files("src/main/resources/lib/vad-1.0.0.jar"))
+    implementation("com.microsoft.onnxruntime:onnxruntime:1.20.0")
+    implementation(files("src/main/resources/lib/voice-activity-detection-1.0.0.jar"))
     implementation("org.jetbrains.compose.material:material-icons-extended-desktop:1.6.11")
 }
 

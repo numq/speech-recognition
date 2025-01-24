@@ -16,13 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.singleWindowApplication
 import capturing.CapturingService
-import com.github.numq.stt.STT
+import com.github.numq.stt.SpeechToText
 import com.github.numq.vad.VoiceActivityDetection
 import device.DeviceService
 import interaction.InteractionScreen
 
-internal const val SAMPLE_RATE = 16_000
-internal const val WINDOW_SIZE_SAMPLES = 512
+const val APP_NAME = "Speech-To-Text"
+const val SAMPLE_RATE = 16_000
 
 fun main(args: Array<String>) {
     val modelPath = args.first()
@@ -31,12 +31,7 @@ fun main(args: Array<String>) {
 
     checkNotNull(pathToBinaries) { "Binaries not found" }
 
-    VoiceActivityDetection.load(
-        libfvad = "$pathToBinaries\\libfvad.dll",
-        libvad = "$pathToBinaries\\libvad.dll"
-    ).getOrThrow()
-
-    STT.load(
+    SpeechToText.Whisper.load(
         ggmlbase = "$pathToBinaries\\ggml-base.dll",
         ggmlcpu = "$pathToBinaries\\ggml-cpu.dll",
         ggmlcuda = "$pathToBinaries\\ggml-cuda.dll",
@@ -45,21 +40,21 @@ fun main(args: Array<String>) {
         libstt = "$pathToBinaries\\libstt.dll"
     ).getOrThrow()
 
-    singleWindowApplication(state = WindowState(width = 512.dp, height = 512.dp)) {
+    singleWindowApplication(state = WindowState(width = 512.dp, height = 512.dp), title = APP_NAME) {
         val deviceService = remember { DeviceService.create().getOrThrow() }
 
         val capturingService = remember { CapturingService.create().getOrThrow() }
 
-        val vad = remember { VoiceActivityDetection.create().getOrThrow() }
+        val vad = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
 
-        val stt = remember { STT.create(modelPath = modelPath).getOrThrow() }
+        val speechToText = remember { SpeechToText.Whisper.create(modelPath = modelPath).getOrThrow() }
 
         val (throwable, setThrowable) = remember { mutableStateOf<Throwable?>(null) }
 
         DisposableEffect(Unit) {
             onDispose {
                 vad.close()
-                stt.close()
+                speechToText.close()
             }
         }
 
@@ -69,7 +64,7 @@ fun main(args: Array<String>) {
                     deviceService = deviceService,
                     capturingService = capturingService,
                     vad = vad,
-                    stt = stt,
+                    speechToText = speechToText,
                     handleThrowable = setThrowable
                 )
                 throwable?.let { t ->

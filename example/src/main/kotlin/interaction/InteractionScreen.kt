@@ -16,14 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import application.SAMPLE_RATE
-import application.WINDOW_SIZE_SAMPLES
 import capturing.CapturingService
-import com.github.numq.stt.STT
+import com.github.numq.stt.SpeechToText
 import com.github.numq.vad.VoiceActivityDetection
 import device.Device
 import device.DeviceService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -31,13 +31,12 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
-
 @Composable
 fun InteractionScreen(
     deviceService: DeviceService,
     capturingService: CapturingService,
     vad: VoiceActivityDetection,
-    stt: STT,
+    speechToText: SpeechToText,
     handleThrowable: (Throwable) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope { Dispatchers.IO }
@@ -83,7 +82,7 @@ fun InteractionScreen(
     }
 
     LaunchedEffect(selectedCapturingDevice) {
-        capturingJob?.cancel()
+        capturingJob?.cancelAndJoin()
         capturingJob = null
 
         when (val device = selectedCapturingDevice) {
@@ -92,16 +91,25 @@ fun InteractionScreen(
             else -> {
                 capturingJob = coroutineScope.launch {
                     ByteArrayOutputStream().use { baos ->
-                        capturingService.capture(device = device, chunkSize = WINDOW_SIZE_SAMPLES * 2).catch {
+                        val sampleRate = device.sampleRate
+
+                        val channels = device.channels
+
+                        val chunkSize = vad.minimumInputSize(
+                            sampleRate = sampleRate,
+                            channels = channels
+                        )
+
+                        capturingService.capture(device = device, chunkSize = chunkSize).catch {
                             handleThrowable(it)
                         }.collect { pcmBytes ->
-                            val isSpeechDetected = vad.detect(
+                            val isVoiceActivityDetected = vad.detect(
                                 pcmBytes = pcmBytes,
-                                sampleRate = device.sampleRate,
-                                channels = device.channels
+                                sampleRate = sampleRate,
+                                channels = channels
                             ).getOrThrow()
 
-                            if (isSpeechDetected) {
+                            if (isVoiceActivityDetected) {
                                 baos.write(
                                     AudioSystem.getAudioInputStream(
                                         AudioFormat(
@@ -126,9 +134,10 @@ fun InteractionScreen(
                                         )
                                     ).readBytes()
                                 )
-                            } else if (baos.size() >= SAMPLE_RATE * 2) {
-                                stt.recognize(pcmBytes = baos.toByteArray()).onSuccess { recognizedText ->
-                                    println(recognizedText)
+                            } else if (baos.size() > 0) {
+                                speechToText.recognize(
+                                    pcmBytes = baos.toByteArray()
+                                ).onSuccess { recognizedText ->
                                     if (recognizedText.isNotBlank()) {
                                         recognizedChunks.add(recognizedText.lowercase())
                                     }
