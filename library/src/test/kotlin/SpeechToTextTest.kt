@@ -34,12 +34,32 @@ class SpeechToTextTest {
     }
 
     @Test
-    fun `should recognize speech and return a string`() = runTest {
-        val pcmBytes = javaClass.classLoader.getResource("audio/test.wav")!!.readBytes()
+    fun `should recognize short speech and return a string`() = runTest {
+        val pcmBytes = javaClass.classLoader.getResource("audio/short.wav")!!.readBytes()
+        val sampleRate = 48_000
+        val channels = 1
+
+        val expectedString = "Test audio".lowercase().replace(" ", "")
 
         assertEquals(
-            "testaudio",
-            stt.recognize(pcmBytes).getOrThrow().lowercase().filter(Char::isLetter)
+            expectedString,
+            stt.recognize(pcmBytes = pcmBytes, sampleRate = sampleRate, channels = channels).getOrThrow().lowercase()
+                .filter(Char::isLetter)
+        )
+    }
+
+    @Test
+    fun `should recognize long speech and return a string`() = runTest {
+        val pcmBytes = javaClass.classLoader.getResource("audio/long.wav")!!.readBytes()
+        val sampleRate = 48_000
+        val channels = 1
+
+        val expectedString = "This is a very long audio file for testing".lowercase().replace(" ", "")
+
+        assertEquals(
+            expectedString,
+            stt.recognize(pcmBytes = pcmBytes, sampleRate = sampleRate, channels = channels).getOrThrow().lowercase()
+                .filter(Char::isLetter)
         )
     }
 }
