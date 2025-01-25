@@ -22,7 +22,6 @@ import device.DeviceService
 import interaction.InteractionScreen
 
 const val APP_NAME = "Speech-To-Text"
-const val SAMPLE_RATE = 16_000
 
 fun main(args: Array<String>) {
     val modelPath = args.first()
@@ -39,6 +38,11 @@ fun main(args: Array<String>) {
         whisper = "$pathToBinaries\\whisper.dll",
         libstt = "$pathToBinaries\\libstt.dll"
     ).getOrThrow()
+
+    VoiceActivityDetection.Fvad.load(
+        libfvad = "$pathToBinaries\\vad\\libfvad.dll",
+        libvad = "$pathToBinaries\\vad\\libvad.dll",
+    )
 
     singleWindowApplication(state = WindowState(width = 512.dp, height = 512.dp), title = APP_NAME) {
         val deviceService = remember { DeviceService.create().getOrThrow() }

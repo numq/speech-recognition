@@ -56,7 +56,7 @@ internal class LineCapturingService : CapturingService {
             val bytesRead = targetDataLine.read(chunk, 0, chunk.size)
 
             if (bytesRead > 0) {
-                send(chunk.copyOf(bytesRead))
+                send(chunk.copyOfRange(0, bytesRead))
             }
         }
 

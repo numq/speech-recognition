@@ -117,6 +117,11 @@ Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_recognizeNative(JNIEn
         auto samples = convertSamples(env, pcmBytes);
 
         auto params = whisper_full_default_params(whisper_sampling_strategy::WHISPER_SAMPLING_GREEDY);
+        params.no_context = true;
+        params.no_timestamps = true;
+        params.single_segment = true;
+        params.suppress_blank = true;
+        params.suppress_non_speech_tokens = true;
 
         if (whisper_full(context, params, samples.data(), static_cast<int>(samples.size())) != 0) {
             return env->NewStringUTF("");

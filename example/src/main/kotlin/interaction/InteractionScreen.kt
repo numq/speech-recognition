@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
-import application.SAMPLE_RATE
 import capturing.CapturingService
 import com.github.numq.stt.SpeechToText
 import com.github.numq.vad.VoiceActivityDetection
@@ -25,21 +24,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
+import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
+import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
 fun InteractionScreen(
     deviceService: DeviceService,
     capturingService: CapturingService,
-    vad: VoiceActivityDetection,
+    vad: VoiceActivityDetection.Silero,
     speechToText: SpeechToText,
     handleThrowable: (Throwable) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope { Dispatchers.IO }
+    val coroutineScope = rememberCoroutineScope { Dispatchers.Default }
 
     var deviceJob by remember { mutableStateOf<Job?>(null) }
 
@@ -85,80 +91,75 @@ fun InteractionScreen(
         capturingJob?.cancelAndJoin()
         capturingJob = null
 
-        when (val device = selectedCapturingDevice) {
+        capturingJob = when (val device = selectedCapturingDevice) {
             null -> return@LaunchedEffect
 
-            else -> {
-                capturingJob = coroutineScope.launch {
-                    ByteArrayOutputStream().use { baos ->
-                        val sampleRate = device.sampleRate
+            else -> coroutineScope.launch {
+                val sampleRate = device.sampleRate
 
-                        val channels = device.channels
+                val channels = device.channels
 
-                        val chunkSize = vad.minimumInputSize(
-                            sampleRate = sampleRate,
-                            channels = channels
-                        )
+                val chunkSize = vad.minimumInputSize(
+                    sampleRate = sampleRate, channels = channels
+                )
 
-                        capturingService.capture(device = device, chunkSize = chunkSize).catch {
+                ByteArrayOutputStream().use { baos ->
+                    capturingService.capture(
+                        device = device, chunkSize = chunkSize
+                    ).catch {
+                        if (it != CancellationException()) {
                             handleThrowable(it)
-                        }.collect { pcmBytes ->
-                            val isVoiceActivityDetected = vad.detect(
-                                pcmBytes = pcmBytes,
+                        }
+                    }.onEach { pcmBytes ->
+                        val isSpeechDetected = vad.detect(
+                            pcmBytes = pcmBytes, sampleRate = sampleRate, channels = channels
+                        ).getOrThrow()
+
+                        if (isSpeechDetected) {
+                            baos.write(pcmBytes)
+                        } else if (baos.size() > 0) {
+                            val format = with(device) {
+                                AudioFormat(sampleRate.toFloat(), sampleSizeInBits, channels, isSigned, isBigEndian)
+                            }
+
+                            val bytes = baos.toByteArray()
+
+                            val inputStream = AudioInputStream(
+                                ByteArrayInputStream(bytes), format, bytes.size.toLong()
+                            )
+
+                            AudioSystem.write(
+                                inputStream, AudioFileFormat.Type.WAVE, File(
+                                    "chunks/" + System.currentTimeMillis().toString() + "-" + baos.size()
+                                        .toString() + ".wav"
+                                )
+                            )
+
+                            speechToText.recognize(
+                                pcmBytes = baos.toByteArray(),
                                 sampleRate = sampleRate,
                                 channels = channels
-                            ).getOrThrow()
+                            ).onSuccess { recognizedText ->
+                                if (recognizedText.isNotBlank()) {
+                                    recognizedChunks.add(recognizedText.lowercase())
+                                }
+                            }.getOrThrow()
 
-                            if (isVoiceActivityDetected) {
-                                baos.write(
-                                    AudioSystem.getAudioInputStream(
-                                        AudioFormat(
-                                            SAMPLE_RATE.toFloat(),
-                                            16,
-                                            1,
-                                            true,
-                                            false
-                                        ),
-                                        AudioInputStream(
-                                            pcmBytes.inputStream(),
-                                            with(device) {
-                                                AudioFormat(
-                                                    sampleRate.toFloat(),
-                                                    sampleSizeInBits,
-                                                    channels,
-                                                    isSigned,
-                                                    isBigEndian
-                                                )
-                                            },
-                                            pcmBytes.size.toLong()
-                                        )
-                                    ).readBytes()
-                                )
-                            } else if (baos.size() > 0) {
-                                speechToText.recognize(
-                                    pcmBytes = baos.toByteArray()
-                                ).onSuccess { recognizedText ->
-                                    if (recognizedText.isNotBlank()) {
-                                        recognizedChunks.add(recognizedText.lowercase())
-                                    }
-                                }.getOrThrow()
-
-                                baos.reset()
-                            }
+                            baos.reset()
                         }
-                    }
+                    }.flowOn(Dispatchers.IO).collect()
                 }
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Card(modifier = Modifier.fillMaxWidth().weight(.5f)) {
+            Card(modifier = Modifier.weight(1f)) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -197,12 +198,11 @@ fun InteractionScreen(
                             verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
                             contentPadding = PaddingValues(8.dp)
                         ) {
-                            items(capturingDevices, key = (Device::name)) { device ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .alpha(alpha = if (device == selectedCapturingDevice) .5f else 1f).clickable {
-                                            selectedCapturingDevice = device.takeIf { it != selectedCapturingDevice }
-                                        }) {
+                            items(capturingDevices, key = { it.name }) { device ->
+                                Card(modifier = Modifier.fillMaxWidth()
+                                    .alpha(alpha = if (device == selectedCapturingDevice) .5f else 1f).clickable {
+                                        selectedCapturingDevice = device.takeIf { it != selectedCapturingDevice }
+                                    }) {
                                     Text(device.name, modifier = Modifier.padding(8.dp))
                                 }
                             }
@@ -210,7 +210,6 @@ fun InteractionScreen(
                     }
                 }
             }
-
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -221,7 +220,6 @@ fun InteractionScreen(
                     Text(text = recognizedChunk)
                 }
             }
-
             Button(onClick = {
                 recognizedChunks.clear()
             }, enabled = recognizedChunks.isNotEmpty()) {
