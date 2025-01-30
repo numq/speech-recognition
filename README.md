@@ -1,4 +1,4 @@
-# Voice Activity Detection
+# Speech-to-Text
 
 JVM library for speech-to-text recognition, written in Kotlin and based on the C++
 library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
@@ -25,18 +25,28 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 
 > See the [example](example) module for implementation details
 
-- Load binaries if you are going to use fvad
-   ```kotlin
-   SpeechToText.Whisper.load(
-    ggmlbase = "/path/to/ggmlbase", 
-    ggmlcpu = "/path/to/ggmlcpu",
-    ggmlcuda = "/path/to/ggmlcuda",
-    ggml = "/path/to/ggml",
-    whisper = "/path/to/whisper",
-    libstt = "/path/to/libstt",
-  )
-   ```
-
+- Load binaries
+  - CPU
+     ```kotlin
+     SpeechToText.Whisper.loadCPU(
+      ggmlbase = "/path/to/ggmlbase", 
+      ggmlcpu = "/path/to/ggmlcpu",
+      ggml = "/path/to/ggml",
+      whisper = "/path/to/whisper",
+      libstt = "/path/to/libstt",
+    )
+     ```
+  - CUDA
+     ```kotlin
+     SpeechToText.Whisper.loadCUDA(
+      ggmlbase = "/path/to/ggmlbase", 
+      ggmlcpu = "/path/to/ggmlcpu",
+      ggmlcuda = "/path/to/ggmlcuda",
+      ggml = "/path/to/ggml",
+      whisper = "/path/to/whisper",
+      libstt = "/path/to/libstt",
+    )
+     ```
 
 - Create an instance
 
