@@ -53,7 +53,6 @@ class SpeechToTextWhisperTest {
             libstt = "$pathToCudaBinaries/libstt.dll"
         ).getOrThrow()
 
-
         SpeechToText.Whisper.create(modelPath).getOrThrow().use { speechToText ->
             testSpeechRecognition(speechToText, "audio/short.wav", "Test audio")
 
