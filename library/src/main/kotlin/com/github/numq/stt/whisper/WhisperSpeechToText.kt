@@ -3,7 +3,9 @@ package com.github.numq.stt.whisper
 import com.github.numq.stt.SpeechToText
 import com.github.numq.stt.audio.AudioProcessing
 
-internal class WhisperSpeechToText(private val nativeWhisperSpeechToText: NativeWhisperSpeechToText) : SpeechToText {
+internal class WhisperSpeechToText(
+    private val nativeWhisperSpeechToText: NativeWhisperSpeechToText,
+) : SpeechToText.Whisper {
     private val paddingSize = SpeechToText.SAMPLE_RATE * 2
 
     override fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int) = runCatching {
@@ -16,5 +18,9 @@ internal class WhisperSpeechToText(private val nativeWhisperSpeechToText: Native
         nativeWhisperSpeechToText.recognize(pcmBytes = paddedBytes)
     }
 
-    override fun close() = runCatching { nativeWhisperSpeechToText.close() }.getOrDefault(Unit)
+    override fun close() = runCatching {
+        super.close()
+
+        nativeWhisperSpeechToText.close()
+    }.getOrDefault(Unit)
 }
