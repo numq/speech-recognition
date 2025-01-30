@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
 
     checkNotNull(pathToBinaries) { "Binaries not found" }
 
-    SpeechToText.Whisper.load(
+    SpeechToText.Whisper.loadCUDA(
         ggmlbase = "$pathToBinaries\\ggml-base.dll",
         ggmlcpu = "$pathToBinaries\\ggml-cpu.dll",
         ggmlcuda = "$pathToBinaries\\ggml-cuda.dll",

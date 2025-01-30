@@ -28,13 +28,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
-import javax.sound.sampled.AudioFileFormat
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioInputStream
-import javax.sound.sampled.AudioSystem
 import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
@@ -118,23 +112,6 @@ fun InteractionScreen(
                         if (isSpeechDetected) {
                             baos.write(pcmBytes)
                         } else if (baos.size() > 0) {
-                            val format = with(device) {
-                                AudioFormat(sampleRate.toFloat(), sampleSizeInBits, channels, isSigned, isBigEndian)
-                            }
-
-                            val bytes = baos.toByteArray()
-
-                            val inputStream = AudioInputStream(
-                                ByteArrayInputStream(bytes), format, bytes.size.toLong()
-                            )
-
-                            AudioSystem.write(
-                                inputStream, AudioFileFormat.Type.WAVE, File(
-                                    "chunks/" + System.currentTimeMillis().toString() + "-" + baos.size()
-                                        .toString() + ".wav"
-                                )
-                            )
-
                             speechToText.recognize(
                                 pcmBytes = baos.toByteArray(),
                                 sampleRate = sampleRate,
