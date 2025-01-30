@@ -105,11 +105,15 @@ interface SpeechToText : AutoCloseable {
              * @return a [Result] containing the created instance if successful.
              * @throws IllegalStateException if the native libraries are not loaded or if there is an issue with the underlying native libraries.
              */
-            fun create(modelPath: String): Result<SpeechToText> = runCatching {
+            fun create(modelPath: String): Result<Whisper> = runCatching {
                 check(loadState !is LoadState.Unloaded) { "Native binaries were not loaded" }
 
                 WhisperSpeechToText(nativeWhisperSpeechToText = NativeWhisperSpeechToText(modelPath = modelPath))
             }
+        }
+
+        override fun close() {
+            loadState = LoadState.Unloaded
         }
     }
 }
