@@ -22,10 +22,49 @@ interface SpeechToText : AutoCloseable {
 
     interface Whisper : SpeechToText {
         companion object {
-            private var isLoaded = false
+            private sealed interface LoadState {
+                data object Unloaded : LoadState
+
+                data object CPU : LoadState
+
+                data object CUDA : LoadState
+            }
+
+            @Volatile
+            private var loadState: LoadState = LoadState.Unloaded
 
             /**
-             * Loads the native libraries required for Whisper speech-to-text processing.
+             * Loads the CPU-based native libraries required for Whisper speech-to-text processing.
+             *
+             * This method must be called before creating a Whisper instance.
+             *
+             * @param ggmlbase the path to the ggml-base library.
+             * @param ggmlcpu the path to the ggml-cpu library.
+             * @param ggml the path to the ggml library.
+             * @param whisper the path to the whisper library.
+             * @param libstt the path to the libstt library.
+             * @return a [Result] indicating the success or failure of the operation.
+             */
+            fun loadCPU(
+                ggmlbase: String,
+                ggmlcpu: String,
+                ggml: String,
+                whisper: String,
+                libstt: String,
+            ) = runCatching {
+                check(loadState is LoadState.Unloaded) { "Native binaries have already been loaded as ${loadState::class.simpleName}" }
+
+                System.load(ggmlbase)
+                System.load(ggmlcpu)
+                System.load(ggml)
+                System.load(whisper)
+                System.load(libstt)
+
+                loadState = LoadState.CPU
+            }
+
+            /**
+             * Loads the CUDA-based native libraries required for Whisper speech-to-text processing.
              *
              * This method must be called before creating a Whisper instance.
              *
@@ -37,7 +76,7 @@ interface SpeechToText : AutoCloseable {
              * @param libstt the path to the libstt library.
              * @return a [Result] indicating the success or failure of the operation.
              */
-            fun load(
+            fun loadCUDA(
                 ggmlbase: String,
                 ggmlcpu: String,
                 ggmlcuda: String,
@@ -45,14 +84,16 @@ interface SpeechToText : AutoCloseable {
                 whisper: String,
                 libstt: String,
             ) = runCatching {
+                check(loadState is LoadState.Unloaded) { "Native binaries have already been loaded as ${loadState::class.simpleName}" }
+
                 System.load(ggmlbase)
                 System.load(ggmlcpu)
                 System.load(ggmlcuda)
                 System.load(ggml)
                 System.load(whisper)
                 System.load(libstt)
-            }.onSuccess {
-                isLoaded = true
+
+                loadState = LoadState.CUDA
             }
 
             /**
@@ -65,7 +106,7 @@ interface SpeechToText : AutoCloseable {
              * @throws IllegalStateException if the native libraries are not loaded or if there is an issue with the underlying native libraries.
              */
             fun create(modelPath: String): Result<SpeechToText> = runCatching {
-                check(isLoaded) { "Native binaries were not loaded" }
+                check(loadState !is LoadState.Unloaded) { "Native binaries were not loaded" }
 
                 WhisperSpeechToText(nativeWhisperSpeechToText = NativeWhisperSpeechToText(modelPath = modelPath))
             }
