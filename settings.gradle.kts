@@ -1,3 +1,3 @@
-rootProject.name = "speech-to-text"
+rootProject.name = "speech-recognition"
 
 include("library", "example")

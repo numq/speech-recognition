@@ -1,4 +1,4 @@
-#include "Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText.h"
+#include "Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition.h"
 
 static jclass exceptionClass;
 static std::shared_mutex mutex;
@@ -9,6 +9,8 @@ void handleException(JNIEnv *env, const std::string &errorMessage) {
 }
 
 whisper_context *getPointer(jlong handle) {
+    std::shared_lock<std::shared_mutex> lock(mutex);
+
     auto it = pointers.find(handle);
     if (it == pointers.end()) {
         throw std::runtime_error("Invalid handle");
@@ -71,8 +73,8 @@ JNI_OnUnload(JavaVM *vm, void *reserved) {
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_initNative(JNIEnv *env, jclass thisClass,
-                                                                      jstring modelPath) {
+Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_initNative(JNIEnv *env, jclass thisClass,
+                                                                                         jstring modelPath) {
     std::unique_lock<std::shared_mutex> lock(mutex);
 
     try {
@@ -109,8 +111,11 @@ Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_initNative(JNIEnv *en
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_recognizeNative(JNIEnv *env, jclass thisClass, jlong handle,
-                                                                           jbyteArray pcmBytes) {
+Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_recognizeNative(JNIEnv *env,
+                                                                                              jclass thisClass,
+                                                                                              jlong handle,
+                                                                                              jbyteArray pcmBytes,
+                                                                                              jfloat temperature) {
     std::shared_lock<std::shared_mutex> lock(mutex);
 
     try {
@@ -124,6 +129,7 @@ Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_recognizeNative(JNIEn
         params.single_segment = true;
         params.suppress_blank = true;
         params.suppress_nst = true;
+        params.temperature = static_cast<float>(temperature);
 
         if (whisper_full(context, params, samples.data(), static_cast<int>(samples.size())) != 0) {
             return env->NewStringUTF("");
@@ -144,8 +150,9 @@ Java_com_github_numq_stt_whisper_NativeWhisperSpeechToText_recognizeNative(JNIEn
 }
 
 JNIEXPORT void JNICALL
-Java_com_github_numq_stt_NativeSTT_freeNative(JNIEnv *env, jclass thisClass, jlong handle) {
-    std::shared_lock<std::shared_mutex> lock(mutex);
+Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_freeNative(JNIEnv *env, jclass thisClass,
+                                                                                         jlong handle) {
+    std::unique_lock<std::shared_mutex> lock(mutex);
 
     try {
         if (pointers.erase(handle) == 0) {

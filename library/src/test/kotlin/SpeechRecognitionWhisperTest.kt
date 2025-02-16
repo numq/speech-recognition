@@ -1,9 +1,9 @@
-import com.github.numq.stt.SpeechToText
+import com.github.numq.speechrecognition.SpeechRecognition
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class SpeechToTextWhisperTest {
+class SpeechRecognitionWhisperTest {
     companion object {
         private val modelPath = this::class.java.getResource("model/ggml-tiny.bin")?.path?.trimStart('/')!!
 
@@ -12,28 +12,31 @@ class SpeechToTextWhisperTest {
         private val pathToCudaBinaries = this::class.java.getResource("bin/cuda")?.path!!
     }
 
-    private fun testSpeechRecognition(speechToText: SpeechToText, audioFile: String, expectedText: String) {
+    private suspend fun testSpeechRecognition(
+        speechRecognition: SpeechRecognition,
+        audioFile: String,
+        expectedText: String,
+    ) {
         val pcmBytes = javaClass.classLoader.getResource(audioFile)!!.readBytes()
         val sampleRate = 48_000
         val channels = 1
 
         assertEquals(
             expectedText.lowercase().replace(" ", ""),
-            speechToText.recognize(pcmBytes, sampleRate, channels).getOrThrow().lowercase().filter(Char::isLetter)
+            speechRecognition.recognize(pcmBytes, sampleRate, channels).getOrThrow().lowercase().filter(Char::isLetter)
         )
     }
 
     @Test
     fun `should recognize speech with CPU`() = runTest {
-        SpeechToText.Whisper.loadCPU(
-            ggmlbase = "$pathToCpuBinaries/ggml-base.dll",
-            ggmlcpu = "$pathToCpuBinaries/ggml-cpu.dll",
+        SpeechRecognition.Whisper.loadCPU(
+            ggmlBase = "$pathToCpuBinaries/ggml-base.dll",
+            ggmlCpu = "$pathToCpuBinaries/ggml-cpu.dll",
             ggml = "$pathToCpuBinaries/ggml.dll",
-            whisper = "$pathToCpuBinaries/whisper.dll",
-            libstt = "$pathToCpuBinaries/libstt.dll"
+            speechRecognitionWhisper = "$pathToCpuBinaries/speech-recognition-whisper.dll"
         ).getOrThrow()
 
-        SpeechToText.Whisper.create(modelPath).getOrThrow().use { speechToText ->
+        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechToText ->
             testSpeechRecognition(speechToText, "audio/short.wav", "Test audio")
 
             testSpeechRecognition(
@@ -44,16 +47,15 @@ class SpeechToTextWhisperTest {
 
     @Test
     fun `should recognize speech with CUDA`() = runTest {
-        SpeechToText.Whisper.loadCUDA(
-            ggmlbase = "$pathToCudaBinaries/ggml-base.dll",
-            ggmlcpu = "$pathToCudaBinaries/ggml-cpu.dll",
-            ggmlcuda = "$pathToCudaBinaries/ggml-cuda.dll",
+        SpeechRecognition.Whisper.loadCUDA(
+            ggmlBase = "$pathToCudaBinaries/ggml-base.dll",
+            ggmlCpu = "$pathToCudaBinaries/ggml-cpu.dll",
+            ggmlCuda = "$pathToCudaBinaries/ggml-cuda.dll",
             ggml = "$pathToCudaBinaries/ggml.dll",
-            whisper = "$pathToCudaBinaries/whisper.dll",
-            libstt = "$pathToCudaBinaries/libstt.dll"
+            speechRecognitionWhisper = "$pathToCudaBinaries/speech-recognition-whisper.dll"
         ).getOrThrow()
 
-        SpeechToText.Whisper.create(modelPath).getOrThrow().use { speechToText ->
+        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechToText ->
             testSpeechRecognition(speechToText, "audio/short.wav", "Test audio")
 
             testSpeechRecognition(

@@ -16,17 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import capturing.CapturingService
-import com.github.numq.stt.SpeechToText
-import com.github.numq.vad.VoiceActivityDetection
+import com.github.numq.speechrecognition.SpeechRecognition
+import com.github.numq.voiceactivitydetection.VoiceActivityDetection
 import device.Device
 import device.DeviceService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.cancellation.CancellationException
@@ -35,8 +32,8 @@ import kotlin.coroutines.cancellation.CancellationException
 fun InteractionScreen(
     deviceService: DeviceService,
     capturingService: CapturingService,
-    vad: VoiceActivityDetection.Silero,
-    speechToText: SpeechToText,
+    silero: VoiceActivityDetection.Silero,
+    speechRecognition: SpeechRecognition,
     handleThrowable: (Throwable) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope { Dispatchers.Default }
@@ -93,37 +90,47 @@ fun InteractionScreen(
 
                 val channels = device.channels
 
-                val chunkSize = vad.minimumInputSize(
-                    sampleRate = sampleRate, channels = channels
-                )
+                val chunkSize = silero.inputSizeForMillis(
+                    sampleRate = sampleRate, channels = channels, millis = 1_000L
+                ).getOrThrow()
+
+                val minInputSize = speechRecognition.minimumInputSize(
+                    sampleRate = sampleRate,
+                    channels = channels
+                ).getOrThrow()
 
                 ByteArrayOutputStream().use { baos ->
-                    capturingService.capture(
-                        device = device, chunkSize = chunkSize
-                    ).catch {
-                        if (it != CancellationException()) {
-                            handleThrowable(it)
-                        }
-                    }.onEach { pcmBytes ->
-                        val isSpeechDetected = vad.detect(
-                            pcmBytes = pcmBytes, sampleRate = sampleRate, channels = channels
-                        ).getOrThrow()
+                    capturingService.capture(device, chunkSize).catch {
+                        if (it != CancellationException()) handleThrowable(it)
+                    }.map { pcmBytes ->
+                        silero.detect(pcmBytes, sampleRate, channels).map { (fragments, isLastFragmentComplete) ->
+                            var incompleteFragment = byteArrayOf()
 
-                        if (isSpeechDetected) {
-                            baos.write(pcmBytes)
-                        } else if (baos.size() > 0) {
-                            speechToText.recognize(
+                            if (isLastFragmentComplete) {
+                                fragments.forEach(baos::write)
+                            } else fragments.forEachIndexed { index, pcmBytes ->
+                                if (index == fragments.lastIndex) incompleteFragment =
+                                    pcmBytes else baos.write(pcmBytes)
+                            }
+
+                            incompleteFragment
+                        }.getOrThrow()
+                    }.onEach { incompleteFragment ->
+                        if (baos.size() > minInputSize) {
+                            speechRecognition.recognize(
                                 pcmBytes = baos.toByteArray(),
                                 sampleRate = sampleRate,
                                 channels = channels
-                            ).onSuccess { recognizedText ->
-                                if (recognizedText.isNotBlank()) {
-                                    recognizedChunks.add(recognizedText.lowercase())
+                            ).onSuccess { text ->
+                                if (text.isNotBlank()) {
+                                    recognizedChunks.add(text.lowercase().replace("[^\\w\\s]".toRegex(), ""))
                                 }
                             }.getOrThrow()
 
                             baos.reset()
                         }
+
+                        baos.write(incompleteFragment)
                     }.flowOn(Dispatchers.IO).collect()
                 }
             }

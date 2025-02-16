@@ -16,49 +16,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.singleWindowApplication
 import capturing.CapturingService
-import com.github.numq.stt.SpeechToText
-import com.github.numq.vad.VoiceActivityDetection
+import com.github.numq.speechrecognition.SpeechRecognition
+import com.github.numq.voiceactivitydetection.VoiceActivityDetection
 import device.DeviceService
 import interaction.InteractionScreen
 
-const val APP_NAME = "Speech-To-Text"
+const val APP_NAME = "Speech recognition"
 
 fun main(args: Array<String>) {
     val modelPath = args.first()
 
-    val pathToBinaries = Thread.currentThread().contextClassLoader.getResource("bin")?.file
+    val pathToBinariesSpeechRecognition = Thread.currentThread().contextClassLoader.getResource("bin/stt")?.file
 
-    checkNotNull(pathToBinaries) { "Binaries not found" }
+    checkNotNull(pathToBinariesSpeechRecognition) { "Speech recognition binaries not found" }
 
-    SpeechToText.Whisper.loadCUDA(
-        ggmlbase = "$pathToBinaries\\ggml-base.dll",
-        ggmlcpu = "$pathToBinaries\\ggml-cpu.dll",
-        ggmlcuda = "$pathToBinaries\\ggml-cuda.dll",
-        ggml = "$pathToBinaries\\ggml.dll",
-        whisper = "$pathToBinaries\\whisper.dll",
-        libstt = "$pathToBinaries\\libstt.dll"
+    SpeechRecognition.Whisper.loadCUDA(
+        ggmlBase = "$pathToBinariesSpeechRecognition\\ggml-base.dll",
+        ggmlCpu = "$pathToBinariesSpeechRecognition\\ggml-cpu.dll",
+        ggmlCuda = "$pathToBinariesSpeechRecognition\\ggml-cuda.dll",
+        ggml = "$pathToBinariesSpeechRecognition\\ggml.dll",
+        speechRecognitionWhisper = "$pathToBinariesSpeechRecognition\\speech-recognition-whisper.dll"
     ).getOrThrow()
-
-    VoiceActivityDetection.Fvad.load(
-        libfvad = "$pathToBinaries\\vad\\libfvad.dll",
-        libvad = "$pathToBinaries\\vad\\libvad.dll",
-    )
 
     singleWindowApplication(state = WindowState(width = 512.dp, height = 512.dp), title = APP_NAME) {
         val deviceService = remember { DeviceService.create().getOrThrow() }
 
         val capturingService = remember { CapturingService.create().getOrThrow() }
 
-        val vad = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
+        val silero = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
 
-        val speechToText = remember { SpeechToText.Whisper.create(modelPath = modelPath).getOrThrow() }
+        val speechRecognition = remember { SpeechRecognition.Whisper.create(modelPath = modelPath).getOrThrow() }
 
         val (throwable, setThrowable) = remember { mutableStateOf<Throwable?>(null) }
 
         DisposableEffect(Unit) {
             onDispose {
-                vad.close()
-                speechToText.close()
+                silero.close()
+                speechRecognition.close()
             }
         }
 
@@ -67,8 +61,8 @@ fun main(args: Array<String>) {
                 InteractionScreen(
                     deviceService = deviceService,
                     capturingService = capturingService,
-                    vad = vad,
-                    speechToText = speechToText,
+                    silero = silero,
+                    speechRecognition = speechRecognition,
                     handleThrowable = setThrowable
                 )
                 throwable?.let { t ->
