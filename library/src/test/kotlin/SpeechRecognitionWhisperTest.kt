@@ -36,11 +36,11 @@ class SpeechRecognitionWhisperTest {
             speechRecognitionWhisper = "$pathToCpuBinaries/speech-recognition-whisper.dll"
         ).getOrThrow()
 
-        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechToText ->
-            testSpeechRecognition(speechToText, "audio/short.wav", "Test audio")
+        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechRecognition ->
+            testSpeechRecognition(speechRecognition, "audio/short.wav", "Test audio")
 
             testSpeechRecognition(
-                speechToText, "audio/long.wav", "This is a very long audio file for testing"
+                speechRecognition, "audio/long.wav", "This is a very long audio file for testing"
             )
         }
     }
@@ -55,11 +55,11 @@ class SpeechRecognitionWhisperTest {
             speechRecognitionWhisper = "$pathToCudaBinaries/speech-recognition-whisper.dll"
         ).getOrThrow()
 
-        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechToText ->
-            testSpeechRecognition(speechToText, "audio/short.wav", "Test audio")
+        SpeechRecognition.Whisper.create(modelPath).getOrThrow().use { speechRecognition ->
+            testSpeechRecognition(speechRecognition, "audio/short.wav", "Test audio")
 
             testSpeechRecognition(
-                speechToText, "audio/long.wav", "This is a very long audio file for testing"
+                speechRecognition, "audio/long.wav", "This is a very long audio file for testing"
             )
         }
     }
