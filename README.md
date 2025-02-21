@@ -34,7 +34,7 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - Load binaries
     - CPU
        ```kotlin
-       SpeechToText.Whisper.loadCPU(
+       SpeechRecognition.Whisper.loadCPU(
         ggmlBase = "/path/to/ggml-base", 
         ggmlCpu = "/path/to/ggml-cpu",
         ggml = "/path/to/ggml",
@@ -43,7 +43,7 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
        ```
     - CUDA
        ```kotlin
-       SpeechToText.Whisper.loadCUDA(
+       SpeechRecognition.Whisper.loadCUDA(
         ggmlBase = "/path/to/ggml-base", 
         ggmlCpu = "/path/to/ggml-cpu",
         ggmlCuda = "/path/to/ggml-cuda",
@@ -55,7 +55,7 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - Create an instance
 
   ```kotlin
-  SpeechToText.Whisper.create()
+  SpeechRecognition.Whisper.create()
   ```
 
 - Call `minimumInputSize` to get the audio producer buffer size for real-time detection
