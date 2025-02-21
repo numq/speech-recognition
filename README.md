@@ -55,7 +55,9 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - Create an instance
 
   ```kotlin
-  SpeechRecognition.Whisper.create()
+  SpeechRecognition.Whisper.create(
+      modelPath = "/path/to/model"
+  )
   ```
 
 - Call `minimumInputSize` to get the audio producer buffer size for real-time detection
