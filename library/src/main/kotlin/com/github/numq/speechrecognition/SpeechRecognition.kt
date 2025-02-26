@@ -1,7 +1,11 @@
 package com.github.numq.speechrecognition
 
+import com.github.numq.speechrecognition.silero.SileroSpeechRecognition
+import com.github.numq.speechrecognition.silero.decoder.Decoder
+import com.github.numq.speechrecognition.silero.model.SileroModel
 import com.github.numq.speechrecognition.whisper.NativeWhisperSpeechRecognition
 import com.github.numq.speechrecognition.whisper.WhisperSpeechRecognition
+import java.io.File
 
 interface SpeechRecognition : AutoCloseable {
     /**
@@ -24,6 +28,51 @@ interface SpeechRecognition : AutoCloseable {
      * @return a [Result] containing the recognized text if successful.
      */
     suspend fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int): Result<String>
+
+    interface Silero : SpeechRecognition {
+        companion object {
+            const val SAMPLE_RATE = 16_000
+
+            /**
+             * Creates a new instance of [SpeechRecognition] using the Whisper implementation.
+             *
+             * This method initializes the Whisper speech recognition with the specified model.
+             *
+             * @param modelPath the path to the Whisper model file.
+             * @return a [Result] containing the created instance if successful.
+             * @throws IllegalStateException if the native libraries are not loaded or if there is an issue with the underlying native libraries.
+             */
+            fun create(modelPath: String): Result<Silero> = runCatching {
+                val language = modelPath.split(".").first().split("_").last()
+
+                check(language.isNotBlank()) { "Not found language" }
+
+                val resourceStream = Companion::class.java.classLoader.getResourceAsStream("labels/$language.json")
+                    ?: throw IllegalStateException("Labels '$language.json' not found in resources")
+
+                val tempFile = File.createTempFile("$language-$language", ".json").apply {
+                    deleteOnExit()
+                    outputStream().use { resourceStream.copyTo(it) }
+                }
+
+                SileroSpeechRecognition(
+                    model = SileroModel.create(modelPath = modelPath),
+                    decoder = Decoder.create(
+                        labels = tempFile.readText().trim().removePrefix("[").removeSuffix("]").split(",").map {
+                            it.trim().removeSurrounding("\"")
+                        }
+                    )
+                )
+            }
+        }
+
+        /**
+         * Resets the speech recognition internal state.
+         *
+         * @return a [Result] indicating the success or failure of the operation.
+         */
+        fun reset(): Result<Unit>
+    }
 
     interface Whisper : SpeechRecognition {
         companion object {

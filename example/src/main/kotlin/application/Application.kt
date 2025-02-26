@@ -24,7 +24,7 @@ import interaction.InteractionScreen
 const val APP_NAME = "Speech recognition"
 
 fun main(args: Array<String>) {
-    val modelPath = args.first()
+    val (sileroModelPath, whisperModelPath) = args
 
     val pathToBinariesSpeechRecognition = Thread.currentThread().contextClassLoader.getResource("bin/stt")?.file
 
@@ -43,16 +43,19 @@ fun main(args: Array<String>) {
 
         val capturingService = remember { CapturingService.create().getOrThrow() }
 
-        val silero = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
+        val vad = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
 
-        val speechRecognition = remember { SpeechRecognition.Whisper.create(modelPath = modelPath).getOrThrow() }
+        val silero = remember { SpeechRecognition.Silero.create(modelPath = sileroModelPath).getOrThrow() }
+
+        val whisper = remember { SpeechRecognition.Whisper.create(modelPath = whisperModelPath).getOrThrow() }
 
         val (throwable, setThrowable) = remember { mutableStateOf<Throwable?>(null) }
 
         DisposableEffect(Unit) {
             onDispose {
+                vad.close()
                 silero.close()
-                speechRecognition.close()
+                whisper.close()
             }
         }
 
@@ -61,8 +64,9 @@ fun main(args: Array<String>) {
                 InteractionScreen(
                     deviceService = deviceService,
                     capturingService = capturingService,
+                    vad = vad,
                     silero = silero,
-                    speechRecognition = speechRecognition,
+                    whisper = whisper,
                     handleThrowable = setThrowable
                 )
                 throwable?.let { t ->

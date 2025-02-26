@@ -25,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import selector.SpeechRecognitionItemSelector
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -32,8 +33,9 @@ import kotlin.coroutines.cancellation.CancellationException
 fun InteractionScreen(
     deviceService: DeviceService,
     capturingService: CapturingService,
-    silero: VoiceActivityDetection.Silero,
-    speechRecognition: SpeechRecognition,
+    vad: VoiceActivityDetection.Silero,
+    silero: SpeechRecognition.Silero,
+    whisper: SpeechRecognition.Whisper,
     handleThrowable: (Throwable) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope { Dispatchers.Default }
@@ -41,6 +43,8 @@ fun InteractionScreen(
     var deviceJob by remember { mutableStateOf<Job?>(null) }
 
     var capturingJob by remember { mutableStateOf<Job?>(null) }
+
+    var selectedSpeechRecognitionItem by remember { mutableStateOf(SpeechRecognitionItem.SILERO) }
 
     val capturingDevices = remember { mutableStateListOf<Device>() }
 
@@ -78,7 +82,7 @@ fun InteractionScreen(
         }
     }
 
-    LaunchedEffect(selectedCapturingDevice) {
+    LaunchedEffect(selectedCapturingDevice, selectedSpeechRecognitionItem) {
         capturingJob?.cancelAndJoin()
         capturingJob = null
 
@@ -90,9 +94,15 @@ fun InteractionScreen(
 
                 val channels = device.channels
 
-                val chunkSize = silero.inputSizeForMillis(
+                val chunkSize = vad.inputSizeForMillis(
                     sampleRate = sampleRate, channels = channels, millis = 1_000L
                 ).getOrThrow()
+
+                val speechRecognition = when (selectedSpeechRecognitionItem) {
+                    SpeechRecognitionItem.WHISPER -> whisper
+
+                    SpeechRecognitionItem.SILERO -> silero
+                }
 
                 val minInputSize = speechRecognition.minimumInputSize(
                     sampleRate = sampleRate,
@@ -103,7 +113,7 @@ fun InteractionScreen(
                     capturingService.capture(device, chunkSize).catch {
                         if (it != CancellationException()) handleThrowable(it)
                     }.map { pcmBytes ->
-                        silero.detect(pcmBytes, sampleRate, channels).map { (fragments, isLastFragmentComplete) ->
+                        vad.detect(pcmBytes, sampleRate, channels).map { (fragments, isLastFragmentComplete) ->
                             var incompleteFragment = byteArrayOf()
 
                             if (isLastFragmentComplete) {
@@ -149,6 +159,19 @@ fun InteractionScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    SpeechRecognitionItemSelector(
+                        modifier = Modifier.fillMaxWidth(),
+                        selectedSpeechRecognitionItem = selectedSpeechRecognitionItem
+                    ) { speechRecognitionItem ->
+                        selectedSpeechRecognitionItem = speechRecognitionItem
+
+                        if (selectedSpeechRecognitionItem == SpeechRecognitionItem.SILERO) {
+                            silero.reset().onFailure(handleThrowable)
+                        }
+                    }
+
+                    Divider(modifier = Modifier.fillMaxWidth())
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
