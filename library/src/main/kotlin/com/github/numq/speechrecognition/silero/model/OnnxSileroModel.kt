@@ -14,11 +14,11 @@ internal class OnnxSileroModel(modelPath: String) : SileroModel {
     }
 
     private fun extractTensorData(output: OrtSession.Result): Array<FloatArray> {
-        val outputTensor = output.firstOrNull()?.value as? OnnxTensor
+        val outputTensor = output.lastOrNull()?.value as? OnnxTensor
 
         val tensorData = outputTensor?.value as? Array<Array<FloatArray>>
 
-        return tensorData?.lastOrNull() ?: arrayOf()
+        return tensorData?.firstOrNull() ?: arrayOf()
     }
 
     override fun process(input: Array<FloatArray>) = runCatching {
