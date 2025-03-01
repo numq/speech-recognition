@@ -18,7 +18,7 @@ class SpeechRecognitionWhisperTest {
         expectedText: String,
     ) {
         val pcmBytes = javaClass.classLoader.getResource(audioFile)!!.readBytes()
-        val sampleRate = 48_000
+        val sampleRate = 22_050
         val channels = 1
 
         assertEquals(

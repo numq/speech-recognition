@@ -31,7 +31,7 @@ interface SpeechRecognition : AutoCloseable {
 
     interface Silero : SpeechRecognition {
         companion object {
-            const val SAMPLE_RATE = 48000
+            const val SAMPLE_RATE = 16_000
 
             /**
              * Creates a new instance of [SpeechRecognition] using the Whisper implementation.

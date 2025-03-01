@@ -31,15 +31,15 @@ internal class SileroSpeechRecognition(
 
         val monoData = downmixToMono(inputData = pcmBytes, channels = channels)
 
-        val resampledData = resample(
+        val resampledBytes = resample(
             inputData = monoData,
             channels = CHANNELS_MONO,
             inputSampleRate = sampleRate,
             outputSampleRate = SpeechRecognition.Silero.SAMPLE_RATE
         )
 
-        val floatSamples = FloatArray(resampledData.size / 2) { i ->
-            ((resampledData[i * 2].toInt() and 0xFF) or (resampledData[i * 2 + 1].toInt() shl 8)) / 32767f
+        val floatSamples = FloatArray(resampledBytes.size / 2) { i ->
+            ((resampledBytes[i * 2].toInt() and 0xFF) or (resampledBytes[i * 2 + 1].toInt() shl 8)) / 32767f
         }
 
         decoder.process(probs = model.process(arrayOf(floatSamples)).getOrThrow()).getOrThrow()

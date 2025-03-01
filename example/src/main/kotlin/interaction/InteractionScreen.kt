@@ -109,6 +109,8 @@ fun InteractionScreen(
                     channels = channels
                 ).getOrThrow()
 
+                var i = 0
+
                 ByteArrayOutputStream().use { baos ->
                     capturingService.capture(device, chunkSize).catch {
                         if (it != CancellationException()) handleThrowable(it)
