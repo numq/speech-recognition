@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 
         val capturingService = remember { CapturingService.create().getOrThrow() }
 
-        val vad = remember { VoiceActivityDetection.Silero.create(threshold = .75f).getOrThrow() }
+        val vad = remember { VoiceActivityDetection.Silero.create().getOrThrow() }
 
         val silero = remember { SpeechRecognition.Silero.create(modelPath = sileroModelPath).getOrThrow() }
 

@@ -15,7 +15,7 @@ interface SpeechRecognition : AutoCloseable {
      * @param channels the number of audio channels.
      * @return a [Result] containing the minimum input size in bytes.
      */
-    suspend fun minimumInputSize(sampleRate: Int, channels: Int): Result<Int>
+    fun minimumInputSize(sampleRate: Int, channels: Int): Result<Int>
 
     /**
      * Recognizes text from the given PCM audio data.

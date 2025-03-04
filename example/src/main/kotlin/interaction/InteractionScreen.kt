@@ -17,13 +17,17 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import capturing.CapturingService
 import com.github.numq.speechrecognition.SpeechRecognition
+import com.github.numq.voiceactivitydetection.DetectedSpeech
 import com.github.numq.voiceactivitydetection.VoiceActivityDetection
 import device.Device
 import device.DeviceService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import selector.SpeechRecognitionItemSelector
 import java.io.ByteArrayOutputStream
@@ -109,40 +113,34 @@ fun InteractionScreen(
                     channels = channels
                 ).getOrThrow()
 
-                var i = 0
-
                 ByteArrayOutputStream().use { baos ->
                     capturingService.capture(device, chunkSize).catch {
                         if (it != CancellationException()) handleThrowable(it)
-                    }.map { pcmBytes ->
-                        vad.detect(pcmBytes, sampleRate, channels).map { (fragments, isLastFragmentComplete) ->
-                            var incompleteFragment = byteArrayOf()
+                    }.onEach { pcmBytes ->
+                        vad.detect(
+                            pcmBytes = pcmBytes,
+                            sampleRate = sampleRate,
+                            channels = channels,
+                            isContinuous = true
+                        ).getOrThrow().collect { detectedSpeech ->
+                            (detectedSpeech as? DetectedSpeech.Detected)?.bytes?.let(baos::write)
 
-                            if (isLastFragmentComplete) {
-                                fragments.forEach(baos::write)
-                            } else fragments.forEachIndexed { index, pcmBytes ->
-                                if (index == fragments.lastIndex) incompleteFragment =
-                                    pcmBytes else baos.write(pcmBytes)
+                            if (detectedSpeech !is DetectedSpeech.Detected.Segment && baos.size() >= minInputSize) {
+                                speechRecognition.recognize(
+                                    pcmBytes = baos.toByteArray(),
+                                    sampleRate = sampleRate,
+                                    channels = channels
+                                ).onSuccess { text ->
+                                    if (text.isNotBlank()) {
+                                        recognizedChunks.add(
+                                            text.lowercase().replace("[^\\w\\s]".toRegex(), "")
+                                        )
+                                    }
+                                }.getOrThrow()
+
+                                baos.reset()
                             }
-
-                            incompleteFragment
-                        }.getOrThrow()
-                    }.onEach { incompleteFragment ->
-                        if (baos.size() > minInputSize) {
-                            speechRecognition.recognize(
-                                pcmBytes = baos.toByteArray(),
-                                sampleRate = sampleRate,
-                                channels = channels
-                            ).onSuccess { text ->
-                                if (text.isNotBlank()) {
-                                    recognizedChunks.add(text.lowercase().replace("[^\\w\\s]".toRegex(), ""))
-                                }
-                            }.getOrThrow()
-
-                            baos.reset()
                         }
-
-                        baos.write(incompleteFragment)
                     }.flowOn(Dispatchers.IO).collect()
                 }
             }

@@ -14,7 +14,7 @@ internal class SileroSpeechRecognition(
         const val CHANNELS_MONO = 1
     }
 
-    override suspend fun minimumInputSize(sampleRate: Int, channels: Int) = runCatching {
+    override fun minimumInputSize(sampleRate: Int, channels: Int) = runCatching {
         require(sampleRate > 0) { "Sample rate must be greater than 0" }
 
         require(channels > 0) { "Number of channels must be greater than 0" }

@@ -23,14 +23,12 @@ internal class WhisperSpeechRecognition(
         }
     }
 
-    override suspend fun minimumInputSize(sampleRate: Int, channels: Int) = mutex.withLock {
-        runCatching {
-            require(sampleRate > 0) { "Sample rate must be greater than 0" }
+    override fun minimumInputSize(sampleRate: Int, channels: Int) = runCatching {
+        require(sampleRate > 0) { "Sample rate must be greater than 0" }
 
-            require(channels > 0) { "Number of channels must be greater than 0" }
+        require(channels > 0) { "Number of channels must be greater than 0" }
 
-            sampleRate * channels * 2
-        }
+        sampleRate * channels * 2
     }
 
     override suspend fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int) = mutex.withLock {
