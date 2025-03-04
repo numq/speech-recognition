@@ -1,7 +1,24 @@
 # Speech recognition
 
 JVM library for speech recognition, written in Kotlin and based on the C++
-library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
+library [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and ML
+model [Silero](https://github.com/snakers4/silero-models)
+
+### See also
+
+- [Stretch](https://github.com/numq/stretch) *to change the speed of audio without changing the pitch*
+
+
+- [Voice Activity Detection](https://github.com/numq/voice-activity-detection) *to extract speech from audio*
+
+
+- [Speech generation](https://github.com/numq/speech-generation) *to generate voice audio from text*
+
+
+- [Text generation](https://github.com/numq/text-generation) *to generate text from prompt*
+
+
+- [Noise reduction](https://github.com/numq/noise-reduction) *to remove noise from audio*
 
 ## Features
 
@@ -19,7 +36,18 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
    }
    ```
 
+### whisper.cpp
+
 - Unzip binaries
+
+### Silero
+
+- Add ONNX dependency
+   ```kotlin
+   dependencies {
+        implementation("com.microsoft.onnxruntime:onnxruntime:1.20.0")
+   }
+   ```
 
 ## Usage
 
@@ -31,7 +59,7 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 
 ### Step-by-step
 
-- Load binaries
+- Load binaries if you are going to use whisper.cpp
     - CPU
        ```kotlin
        SpeechRecognition.Whisper.loadCPU(
@@ -54,11 +82,17 @@ library [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 
 - Create an instance
 
-  ```kotlin
-  SpeechRecognition.Whisper.create(
-      modelPath = "/path/to/model"
-  )
-  ```
+    ### whisper.cpp
+
+     ```kotlin
+     SpeechRecognition.Whisper.create(modelPath = "/path/to/model")
+     ```
+  
+    ### Silero
+
+    ```kotlin
+    SpeechRecognition.Silero.create(modelPath = "/path/to/model")
+    ```
 
 - Call `minimumInputSize` to get the audio producer buffer size for real-time detection
 
@@ -85,3 +119,4 @@ This project is licensed under the [Apache License 2.0](LICENSE)
 ## Acknowledgments
 
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
+- [Silero](https://github.com/snakers4/silero-models)
