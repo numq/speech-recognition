@@ -115,13 +115,23 @@ Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_re
                                                                                               jclass thisClass,
                                                                                               jlong handle,
                                                                                               jbyteArray pcmBytes,
-                                                                                              jfloat temperature) {
+                                                                                              jfloat temperature,
+                                                                                              jstring language,
+                                                                                              jboolean translationFlag) {
     std::shared_lock<std::shared_mutex> lock(mutex);
 
     try {
         auto context = getPointer(handle);
 
         auto samples = convertSamples(env, pcmBytes);
+
+        const char *languageChars = env->GetStringUTFChars(language, nullptr);
+        if (!languageChars) {
+            throw std::runtime_error("Failed to get language string");
+        }
+
+        std::string languageStr(languageChars);
+        env->ReleaseStringUTFChars(language, languageChars);
 
         auto params = whisper_full_default_params(whisper_sampling_strategy::WHISPER_SAMPLING_GREEDY);
         params.no_context = true;
@@ -130,6 +140,8 @@ Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_re
         params.suppress_blank = true;
         params.suppress_nst = true;
         params.temperature = static_cast<float>(temperature);
+        params.language = languageStr.c_str();
+        params.translate = translationFlag;
 
         if (whisper_full(context, params, samples.data(), static_cast<int>(samples.size())) != 0) {
             return env->NewStringUTF("");

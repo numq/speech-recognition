@@ -9,13 +9,23 @@ import java.io.File
 
 interface SpeechRecognition : AutoCloseable {
     /**
+     * The number of audio channels.
+     */
+    val channels: Int
+
+    /**
+     * The sample rate of the audio data in Hertz (Hz).
+     */
+    val sampleRate: Int
+
+    /**
      * Returns the minimum input size.
      *
-     * @param sampleRate the sampling rate of the audio data in Hz.
      * @param channels the number of audio channels.
+     * @param sampleRate the sampling rate of the audio data in Hz.
      * @return a [Result] containing the minimum input size in bytes.
      */
-    fun minimumInputSize(sampleRate: Int, channels: Int): Result<Int>
+    fun minimumInputSize(channels: Int, sampleRate: Int): Result<Int>
 
     /**
      * Recognizes text from the given PCM audio data.
@@ -23,16 +33,14 @@ interface SpeechRecognition : AutoCloseable {
      * The input data is processed to generate a textual transcription.
      *
      * @param pcmBytes the audio data in PCM format.
-     * @param sampleRate the sampling rate of the audio data in Hz.
      * @param channels the number of audio channels (e.g., 1 for mono, 2 for stereo).
+     * @param sampleRate the sampling rate of the audio data in Hz.
      * @return a [Result] containing the recognized text if successful.
      */
-    suspend fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int): Result<String>
+    suspend fun recognize(pcmBytes: ByteArray, channels: Int, sampleRate: Int): Result<String>
 
     interface Silero : SpeechRecognition {
         companion object {
-            const val SAMPLE_RATE = 16_000
-
             /**
              * Creates a new instance of [SpeechRecognition] using the Whisper implementation.
              *
@@ -75,9 +83,37 @@ interface SpeechRecognition : AutoCloseable {
     }
 
     interface Whisper : SpeechRecognition {
-        companion object {
-            const val SAMPLE_RATE = 24_000
+        /**
+         * The currently configured language for speech recognition. Default is "auto".
+         *
+         * @return The language code (e.g., "auto" for automatic detection, "en" for English, etc.) used for transcription.
+         */
+        val language: String
 
+        /**
+         * A flag indicating whether translation is enabled during speech recognition.
+         *
+         * @return `true` if translation is enabled, `false` otherwise.
+         */
+        val translationFlag: Boolean
+
+        /**
+         * Sets the language for speech recognition.
+         *
+         * @param language the language code to use for transcription.
+         * @return a [Result] indicating success or failure of the operation..
+         */
+        suspend fun setLanguage(language: String): Result<Unit>
+
+        /**
+         * Enables or disables the translation feature during speech recognition.
+         *
+         * @param translationFlag `true` to enable translation, `false` to disable it.
+         * @return a [Result] indicating success or failure of the operation.
+         */
+        suspend fun setTranslationFlag(translationFlag: Boolean): Result<Unit>
+
+        companion object {
             private sealed interface LoadState {
                 data object Unloaded : LoadState
 

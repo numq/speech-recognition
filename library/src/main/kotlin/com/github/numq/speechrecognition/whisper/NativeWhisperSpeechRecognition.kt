@@ -17,15 +17,27 @@ internal class NativeWhisperSpeechRecognition(modelPath: String) : AutoCloseable
         external fun initNative(modelPath: String): Long
 
         @JvmStatic
-        external fun recognizeNative(handle: Long, pcmBytes: ByteArray, temperature: Float): String
+        external fun recognizeNative(
+            handle: Long,
+            pcmBytes: ByteArray,
+            temperature: Float,
+            language: String,
+            translationFlag: Boolean,
+        ): String
 
         @JvmStatic
         external fun freeNative(handle: Long)
     }
 
-    fun recognize(pcmBytes: ByteArray, temperature: Float): String {
+    fun recognize(pcmBytes: ByteArray, temperature: Float, language: String, translationFlag: Boolean): String {
         try {
-            return recognizeNative(handle = nativeHandle, pcmBytes = pcmBytes, temperature = temperature)
+            return recognizeNative(
+                handle = nativeHandle,
+                pcmBytes = pcmBytes,
+                temperature = temperature,
+                language = language,
+                translationFlag = translationFlag
+            )
         } catch (e: Exception) {
             throw NativeException(e)
         }

@@ -18,7 +18,7 @@ JNIEXPORT jlong JNICALL Java_com_github_numq_speechrecognition_whisper_NativeWhi
         (JNIEnv *, jclass, jstring);
 
 JNIEXPORT jstring JNICALL Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_recognizeNative
-        (JNIEnv *, jclass, jlong, jbyteArray, jfloat);
+        (JNIEnv *, jclass, jlong, jbyteArray, jfloat, jstring, jboolean);
 
 JNIEXPORT void JNICALL Java_com_github_numq_speechrecognition_whisper_NativeWhisperSpeechRecognition_freeNative
         (JNIEnv *, jclass, jlong);
