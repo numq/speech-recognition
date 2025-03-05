@@ -131,11 +131,10 @@ fun InteractionScreen(
                                     sampleRate = sampleRate,
                                     channels = channels
                                 ).onSuccess { text ->
-                                    if (text.isNotBlank()) {
-                                        recognizedChunks.add(
-                                            text.lowercase().replace("[^\\w\\s]".toRegex(), "")
-                                        )
-                                    }
+                                    text.lowercase()
+                                        .replace("[^\\w\\s]".toRegex(), "")
+                                        .takeIf(String::isNotBlank)
+                                        ?.let(recognizedChunks::add)
                                 }.getOrThrow()
 
                                 baos.reset()
