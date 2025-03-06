@@ -23,7 +23,8 @@ class SpeechRecognitionWhisperTest {
 
         assertEquals(
             expectedText.lowercase().replace(" ", ""),
-            speechRecognition.recognize(pcmBytes, channels, sampleRate).getOrThrow().lowercase().filter(Char::isLetter)
+            speechRecognition.recognize(pcmBytes, sampleRate = sampleRate, channels = channels).getOrThrow().lowercase()
+                .filter(Char::isLetter)
         )
     }
 

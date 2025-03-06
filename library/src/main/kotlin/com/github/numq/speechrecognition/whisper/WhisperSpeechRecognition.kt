@@ -10,8 +10,8 @@ internal class WhisperSpeechRecognition(
     private val nativeWhisperSpeechRecognition: NativeWhisperSpeechRecognition,
 ) : SpeechRecognition.Whisper {
     private companion object {
-        const val CHANNELS_MONO = 1
         const val SAMPLE_RATE = 24_000
+        const val CHANNELS_MONO = 1
         const val DEFAULT_LANGUAGE = "auto"
         const val DEFAULT_TRANSLATION_FLAG = false
     }
@@ -20,9 +20,9 @@ internal class WhisperSpeechRecognition(
 
     private var temperature = 0f
 
-    override val channels = CHANNELS_MONO
-
     override val sampleRate = SAMPLE_RATE
+
+    override val channels = CHANNELS_MONO
 
     override var language = DEFAULT_LANGUAGE
 
@@ -46,15 +46,15 @@ internal class WhisperSpeechRecognition(
         }
     }
 
-    override fun minimumInputSize(channels: Int, sampleRate: Int) = runCatching {
-        require(channels > 0) { "Number of channels must be greater than 0" }
-
+    override fun minimumInputSize(sampleRate: Int, channels: Int) = runCatching {
         require(sampleRate > 0) { "Sample rate must be greater than 0" }
+
+        require(channels > 0) { "Number of channels must be greater than 0" }
 
         sampleRate * channels * 2
     }
 
-    override suspend fun recognize(pcmBytes: ByteArray, channels: Int, sampleRate: Int) = mutex.withLock {
+    override suspend fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int) = mutex.withLock {
         runCatching {
             require(sampleRate > 0) { "Sample rate must be greater than 0" }
 
@@ -64,9 +64,9 @@ internal class WhisperSpeechRecognition(
 
             val resampledBytes = resample(
                 inputData = monoBytes,
-                channels = CHANNELS_MONO,
                 inputSampleRate = sampleRate,
-                outputSampleRate = SAMPLE_RATE
+                outputSampleRate = SAMPLE_RATE,
+                channels = CHANNELS_MONO,
             )
 
             nativeWhisperSpeechRecognition.recognize(

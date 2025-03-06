@@ -9,23 +9,23 @@ import java.io.File
 
 interface SpeechRecognition : AutoCloseable {
     /**
-     * The number of audio channels.
-     */
-    val channels: Int
-
-    /**
      * The sample rate of the audio data in Hertz (Hz).
      */
     val sampleRate: Int
 
     /**
+     * The number of audio channels.
+     */
+    val channels: Int
+
+    /**
      * Returns the minimum input size.
      *
-     * @param channels the number of audio channels.
      * @param sampleRate the sampling rate of the audio data in Hz.
+     * @param channels the number of audio channels.
      * @return a [Result] containing the minimum input size in bytes.
      */
-    fun minimumInputSize(channels: Int, sampleRate: Int): Result<Int>
+    fun minimumInputSize(sampleRate: Int, channels: Int): Result<Int>
 
     /**
      * Recognizes text from the given PCM audio data.
@@ -33,11 +33,11 @@ interface SpeechRecognition : AutoCloseable {
      * The input data is processed to generate a textual transcription.
      *
      * @param pcmBytes the audio data in PCM format.
-     * @param channels the number of audio channels (e.g., 1 for mono, 2 for stereo).
      * @param sampleRate the sampling rate of the audio data in Hz.
+     * @param channels the number of audio channels (e.g., 1 for mono, 2 for stereo).
      * @return a [Result] containing the recognized text if successful.
      */
-    suspend fun recognize(pcmBytes: ByteArray, channels: Int, sampleRate: Int): Result<String>
+    suspend fun recognize(pcmBytes: ByteArray, sampleRate: Int, channels: Int): Result<String>
 
     interface Silero : SpeechRecognition {
         companion object {

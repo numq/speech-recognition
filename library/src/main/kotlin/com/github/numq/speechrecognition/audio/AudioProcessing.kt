@@ -7,10 +7,11 @@ internal object AudioProcessing {
     fun downmixToMono(inputData: ByteArray, channels: Int): ByteArray {
         require(inputData.isNotEmpty()) { "Input data must not be empty" }
 
-        if (channels == 1) return inputData
+        require(inputData.size % (channels * 2) == 0) { "PCM byte size must be a multiple of the frame size (channels * 2)" }
 
         require(channels > 0) { "Number of channels must be greater than 0" }
-        require(inputData.size % (channels * 2) == 0) { "PCM byte size must be a multiple of the frame size (channels * 2)" }
+
+        if (channels == 1) return inputData
 
         val monoBytes = ByteArray(inputData.size / channels)
         val inputBuffer = ByteBuffer.wrap(inputData).order(ByteOrder.LITTLE_ENDIAN)
@@ -33,14 +34,14 @@ internal object AudioProcessing {
         return monoBytes
     }
 
-    fun resample(inputData: ByteArray, channels: Int, inputSampleRate: Int, outputSampleRate: Int): ByteArray {
+    fun resample(inputData: ByteArray, inputSampleRate: Int, outputSampleRate: Int, channels: Int): ByteArray {
         require(inputData.isNotEmpty()) { "Input data must not be empty" }
-
-        require(channels > 0) { "Number of channels must be greater than 0" }
 
         require(inputSampleRate > 0) { "Input sample rate must be greater than 0" }
 
         require(outputSampleRate > 0) { "Output sample rate must be greater than 0" }
+
+        require(channels > 0) { "Number of channels must be greater than 0" }
 
         val inputBuffer = ByteBuffer.wrap(inputData).order(ByteOrder.LITTLE_ENDIAN)
         val inputSampleCount = inputData.size / (channels * 2)
