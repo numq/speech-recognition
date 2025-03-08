@@ -40,6 +40,8 @@ model [Silero](https://github.com/snakers4/silero-models)
 
 - Unzip binaries
 
+- Download one of the models [here](https://huggingface.co/ggerganov/whisper.cpp) or use any other compatible model
+
 ### Silero
 
 - Add ONNX dependency
@@ -48,6 +50,8 @@ model [Silero](https://github.com/snakers4/silero-models)
         implementation("com.microsoft.onnxruntime:onnxruntime:1.20.0")
    }
    ```
+
+- Download 
 
 ## Usage
 
@@ -82,13 +86,13 @@ model [Silero](https://github.com/snakers4/silero-models)
 
 - Create an instance
 
-    ### whisper.cpp
+  ### whisper.cpp
 
      ```kotlin
      SpeechRecognition.Whisper.create(modelPath = "/path/to/model")
      ```
-  
-    ### Silero
+
+  ### Silero
 
     ```kotlin
     SpeechRecognition.Silero.create(modelPath = "/path/to/model")
