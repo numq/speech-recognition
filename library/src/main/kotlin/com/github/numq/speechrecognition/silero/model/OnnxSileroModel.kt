@@ -13,8 +13,8 @@ internal class OnnxSileroModel(modelPath: String) : SileroModel {
         })
     }
 
-    private fun extractTensorData(output: OrtSession.Result): Array<FloatArray> {
-        val outputTensor = output.lastOrNull()?.value as? OnnxTensor
+    private fun extractTensorData(result: OrtSession.Result): Array<FloatArray> {
+        val outputTensor = result.lastOrNull()?.value as? OnnxTensor
 
         val tensorData = outputTensor?.value as? Array<Array<FloatArray>>
 
@@ -23,11 +23,7 @@ internal class OnnxSileroModel(modelPath: String) : SileroModel {
 
     override fun process(input: Array<FloatArray>) = runCatching {
         OnnxTensor.createTensor(env, input).use { inputTensor ->
-            val inputs = mapOf("input" to inputTensor)
-
-            session.run(inputs).use { output ->
-                extractTensorData(output)
-            }
+            session.run(mapOf("input" to inputTensor)).use(::extractTensorData)
         }
     }
 
@@ -39,5 +35,6 @@ internal class OnnxSileroModel(modelPath: String) : SileroModel {
 
     override fun close() {
         session.close()
+        env.close()
     }
 }
