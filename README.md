@@ -1,8 +1,20 @@
-# Speech recognition
+<h1 align="center">Speech recognition</h1>
 
-JVM library for speech recognition, written in Kotlin and based on the C++
-library [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and ML
-model [Silero](https://github.com/snakers4/silero-models)
+<br>
+
+<div align="center" style="display: grid; justify-content: center;">
+
+|                                                                  🌟                                                                   |                  Support this project                   |               
+|:-------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------:|
+|  <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/bitcoin.png" alt="Bitcoin (BTC)" width="32"/>  | <code>bc1qs6qq0fkqqhp4whwq8u8zc5egprakvqxewr5pmx</code> | 
+| <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/ethereum.png" alt="Ethereum (ETH)" width="32"/> | <code>0x3147bEE3179Df0f6a0852044BFe3C59086072e12</code> |
+|  <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/tether.png" alt="USDT (TRC-20)" width="32"/>   |     <code>TKznmR65yhPt5qmYCML4tNSWFeeUkgYSEV</code>     |
+
+</div>
+
+<br>
+
+<p align="center">JVM library for speech recognition, written in Kotlin and based on the C++ library <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> and ML model <a href="https://github.com/snakers4/silero-models">Silero</a></p>
 
 ### See also
 
