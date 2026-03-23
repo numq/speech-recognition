@@ -1,19 +1,5 @@
 <h1 align="center">Speech recognition</h1>
 
-<br>
-
-<div align="center" style="display: grid; justify-content: center;">
-
-|                                                                  🌟                                                                   |                  Support this project                   |               
-|:-------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------:|
-|  <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/bitcoin.png" alt="Bitcoin (BTC)" width="32"/>  | <code>bc1qs6qq0fkqqhp4whwq8u8zc5egprakvqxewr5pmx</code> | 
-| <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/ethereum.png" alt="Ethereum (ETH)" width="32"/> | <code>0x3147bEE3179Df0f6a0852044BFe3C59086072e12</code> |
-|  <img src="https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/tether.png" alt="USDT (TRC-20)" width="32"/>   |     <code>TKznmR65yhPt5qmYCML4tNSWFeeUkgYSEV</code>     |
-
-</div>
-
-<br>
-
 <p align="center">JVM library for speech recognition, written in Kotlin and based on the C++ library <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> and ML model <a href="https://github.com/snakers4/silero-models">Silero</a></p>
 
 ### See also
@@ -136,3 +122,19 @@ This project is licensed under the [Apache License 2.0](LICENSE)
 
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - [Silero](https://github.com/snakers4/silero-models)
+
+___
+
+<p align="center">
+  <a href="https://numq.github.io/support">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=https://numq.github.io/support&bgcolor=1a1b26&color=7aa2f7" 
+         width="112" 
+         height="112" 
+         style="border-radius: 4px;" 
+         alt="QR code">
+  </a>
+  <br>
+  <a href="https://numq.github.io/support" style="text-decoration: none;">
+    <code><font color="#bb9af7">numq.github.io/support</font></code>
+  </a>
+</p>
